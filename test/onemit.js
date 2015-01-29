@@ -271,6 +271,7 @@ describe('OnEmit', function() {
         OnEmit.prototype = surogateProto;
 
         for ( key in proto ) if ( proto.hasOwnProperty(key) && 'function' == typeof proto[key] ) {
+            // if ( key == 'bind' ) continue;
             methods.push(key);
             surogateProto[key] = (function (meth, fn) {
                 return function () {
@@ -286,14 +287,14 @@ describe('OnEmit', function() {
         proto.bind.call(onemit, plain);
 
         // Restore original prototype
-        OnEmit.prototype = proto;
-
         for ( var i = 0; i < methods.length; ++i ) {
             var m = methods[i];
             lastCall[m] = false;
-            plain[m]('test');
+            plain[m](new String('test'));
             true.should.eql(lastCall[m]);
         }
+
+        OnEmit.prototype = proto;
     });
   });
 
