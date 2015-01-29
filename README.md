@@ -1,4 +1,4 @@
-# On / Emit
+# On / Emit [![Build Status](https://travis-ci.org/duzun/onemit.svg?branch=master)](https://travis-ci.org/duzun/onemit)
 
 Event emitter [ .on() / .emit() ]
 
