@@ -19,7 +19,7 @@ describe('Custom', function() {
     });
 });
 
-describe('onemit', function() {
+describe('OnEmit', function() {
   describe('.on(event, fn)', function() {
     it('should add listeners', function() {
       var onemit = new OnEmit;
@@ -39,7 +39,8 @@ describe('onemit', function() {
 
       calls.should.eql([ 'one', 1, 'two', 1, 'one', 2, 'two', 2 ]);
     });
-  });  
+  });
+
   describe('.only(event, fn)', function() {
     it('should add listeners', function() {
       var onemit = new OnEmit;
@@ -59,7 +60,7 @@ describe('onemit', function() {
 
       calls.should.eql([ 'one', 1, 'two', 1, 'one', 2, 'two', 2 ]);
     });
-    
+
     it('should not add same listener more then once', function() {
       var onemit = new OnEmit;
       var calls = [];
@@ -93,6 +94,39 @@ describe('onemit', function() {
 
       calls.should.eql([ 'one', 1 ]);
     });
+  });
+
+  describe('.emitAfter(delay, event, ...)', function () {
+      it('should not emit immediately', function () {
+          var onemit = new OnEmit;
+          var calls = [];
+
+          onemit.on('foo', function(event) {
+            calls.push('called');
+          });
+
+          onemit.emitAfter(1, 'foo', 1);
+
+          calls.should.eql([]);
+      });
+
+      it('should emit the same event as .emit(event, ...)', function (done) {
+          var onemit = new OnEmit;
+          var called;
+          var id = Math.random();
+
+          onemit.on('foo', function(event, id) {
+            if ( !called ) {
+                called = arguments;
+            }
+            else {
+                called.should.eql(arguments);
+                done();
+            }
+          });
+          onemit.emit('foo', id);
+          onemit.emitAfter(1, 'foo', id);
+      });
   });
 
   describe('.off(event, fn)', function() {
@@ -224,6 +258,45 @@ describe('onemit', function() {
       });
     });
   });
+
+  describe('.bind(obj)', function () {
+    it('should add methods of emitter to obj', function () {
+        // Test data
+        var methods = [];
+        var lastCall = {};
+
+        // Prepare spies
+        var proto = OnEmit.prototype;
+        var surogateProto = {};
+        OnEmit.prototype = surogateProto;
+
+        for ( key in proto ) if ( proto.hasOwnProperty(key) && 'function' == typeof proto[key] ) {
+            methods.push(key);
+            surogateProto[key] = (function (meth, fn) {
+                return function () {
+                    lastCall[meth] = true;
+                    return fn.apply(this, arguments);
+                }
+            }(key, proto[key]));
+        }
+
+        // Test objects
+        var plain = {};
+        var onemit = new OnEmit;
+        proto.bind.call(onemit, plain);
+
+        // Restore original prototype
+        OnEmit.prototype = proto;
+
+        for ( var i = 0; i < methods.length; ++i ) {
+            var m = methods[i];
+            lastCall[m] = false;
+            plain[m]('test');
+            true.should.eql(lastCall[m]);
+        }
+    });
+  });
+
 });
 
 describe('onemit(obj)', function() {

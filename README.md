@@ -67,7 +67,7 @@ emitter.emit(event, ...);
 
 ### Emit an `event` with variable option args after `delay` milliseconds.
 ```js
-emitter.emitAfter(event, delay, ...);
+emitter.emitAfter(delay, event, ...);
 ```
 
 
