@@ -1,0 +1,21 @@
+{
+  "name": "onemit",
+  "description": "Event emitter",
+  "keywords": [
+    "onemit",
+    "emitter",
+    "events"
+  ],
+  "version": "1.0.0",
+  "license": "MIT",
+  "main": "onemit.js",
+  "homepage": "https://github.com/duzun/onemit",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "Makefile",
+    "package.json",
+  ]
+}
