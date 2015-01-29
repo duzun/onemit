@@ -1,6 +1,6 @@
-# OnEmit
+# On / Emit
 
-Event emitter (.on / .emit / .off)
+Event emitter [ .on() / .emit() ]
 
 The `OnEmit` may also be used as a mixin.
 For example a "plain" object may become an emitter,
@@ -24,7 +24,7 @@ OnEmit(user);
 user.emit('im a user');
 ```
 
-### As a prototype mixin:
+### As a `prototype` mixin:
 ```js
 var OnEmit = require('emitter');
 OnEmit(User.prototype);
@@ -85,4 +85,4 @@ emitter.hasListeners(event);
 
 ## License
 
-MIT
+[MIT](https://github.com/duzun/onemit/blob/master/LICENSE)
