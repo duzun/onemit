@@ -1,6 +1,9 @@
-# On / Emit [![Build Status](https://travis-ci.org/duzun/onemit.svg?branch=master)](https://travis-ci.org/duzun/onemit)
+# On / Emit
 
 Event emitter [ .on() / .emit() ]
+[![Build Status](https://travis-ci.org/duzun/onemit.svg?branch=master)](https://travis-ci.org/duzun/onemit)
+[![Dependencies](https://david-dm.org/duzun/onemit.svg)](https://david-dm.org/duzun/onemit#info=dependencies&view=table)
+[![devDependencies](https://david-dm.org/duzun/onemit/dev-status.svg)](https://david-dm.org/duzun/onemit#info=devDependencies&view=table)
 
 The `OnEmit` may also be used as a mixin.
 For example a "plain" object may become an emitter,
