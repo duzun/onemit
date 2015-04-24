@@ -85,6 +85,13 @@ emitter.listeners(event);
 emitter.hasListeners(event);
 ```
 
+### The special event `*` listens on all events.
+```js
+emitter.on('*', fn);
+emitter.emit('foo'); // -> fn('foo');
+emitter.emit('bar'); // -> fn('bar');
+emitter.off('*', fn);
+```
 
 ## License
 

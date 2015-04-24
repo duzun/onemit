@@ -5,7 +5,7 @@
  *
  *   @author  Dumitru Uzun (DUzun.Me)
  *   @license MIT
- *   @version 1.2.0
+ *   @version 1.2.1
  *   @repo    https://github.com/duzun/onemit
  */
 
@@ -42,13 +42,13 @@
  *          Register an `event` handler `fn` only once.
  *
  *      OnEmit.once(event, fn)
- *            Register a single-shot `event` handler `fn`,
- *            removed immediately after it is invoked the first time.
+ *          Register a single-shot `event` handler `fn`,
+ *          removed immediately after it is invoked the first time.
  *
  *      OnEmit.off(event, fn)
- *            * Pass `event` and `fn` to remove a listener.
- *            * Pass `event` to remove all listeners on that event.
- *            * Pass nothing to remove all listeners on all events.
+ *          * Pass `event` and `fn` to remove a listener.
+ *          * Pass `event` to remove all listeners on that event.
+ *          * Pass nothing to remove all listeners on all events.
  *
  *      OnEmit.emit(event, ...)
  *          Emit an `event` with variable option args.
@@ -61,6 +61,11 @@
  *
  *      OnEmit.hasListeners(event)
  *          Check if this emitter has `event` handlers.
+ *
+ *      Note: The special event `*` listens on all events.
+ *          Eg. OnEmit.on('*', fn);
+ *              OnEmit.emit('foo'); // -> fn('foo')
+ *              OnEmit.emit('bar'); // -> fn('bar')
  *
  */
 ;(function (name, root, undefined) {

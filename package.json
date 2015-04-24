@@ -1,6 +1,6 @@
 {
   "name": "onemit",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Event emitter",
   "keywords": [
     "onemit",
@@ -10,7 +10,7 @@
   "author": {
     "name": "Dumitru Uzun",
     "email": "contact@duzun.me",
-    "url": "http://DUzun.Me/"
+    "url": "https://DUzun.Me/"
   },
   "readmeFilename": "README.md",
   "license": [
