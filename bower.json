@@ -16,6 +16,6 @@
     "bower_components",
     "test",
     "Makefile",
-    "package.json",
+    "package.json"
   ]
 }
