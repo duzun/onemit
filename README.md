@@ -73,6 +73,14 @@ emitter.emit(event, ...);
 emitter.emitAfter(delay, event, ...);
 ```
 
+`emitAfter` uses `emitter.setTimeout` or `setTimeout`.
+
+### Emit an `event` with variable option args asynchronously.
+```js
+emitter.emitAsync(event, ...);
+```
+
+`emitAsync` uses `emitter.setImmediate` or `setImmediate`, if available, or `setTimeout` otherwise.
 
 ### Get the array of callbacks
 ```js
