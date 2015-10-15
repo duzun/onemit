@@ -128,6 +128,39 @@ describe('OnEmit', function() {
           onemit.emitAfter(1, 'foo', id);
       });
   });
+  
+  describe('.emitAsync(event, ...)', function () {
+      it('should not emit immediately', function () {
+          var onemit = new OnEmit;
+          var calls = [];
+
+          onemit.on('foo', function(event) {
+            calls.push('called');
+          });
+
+          onemit.emitAsync('foo', 1);
+
+          calls.should.eql([]);
+      });
+
+      it('should emit the same event as .emit(event, ...)', function (done) {
+          var onemit = new OnEmit;
+          var called;
+          var id = Math.random();
+
+          onemit.on('foo', function(event, id) {
+            if ( !called ) {
+                called = arguments;
+            }
+            else {
+                called.should.eql(arguments);
+                done();
+            }
+          });
+          onemit.emit('foo', id);
+          onemit.emitAsync('foo', id);
+      });
+  });
 
   describe('.off(event, fn)', function() {
     it('should remove a listener', function() {

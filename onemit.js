@@ -5,11 +5,11 @@
  *
  *   @author  Dumitru Uzun (DUzun.Me)
  *   @license MIT
- *   @version 1.2.3
+ *   @version 1.3.0
  *   @repo    https://github.com/duzun/onemit
  */
 
-/*   Ussage:
+/*   Usage:
  *
  *      OnEmit(obj);
  *          The `OnEmit` may also be used as a mixin.
@@ -68,23 +68,24 @@
  *              OnEmit.emit('bar'); // -> fn('bar')
  *
  */
-;(function (name, root, undefined) {
+;(function (name, global, undefined) {
     'use strict';
     var UNDEFINED = undefined + '';
 
     // Native methods
-    var hop    = Object.prototype.hasOwnProperty;
+    var hop    = ({}).hasOwnProperty;
     var slice  = [].slice;
     var splice = [].splice;
-    var bind   = Function.prototype.bind;
-    var _setTimeout = typeof setTimeout != 'undefined' ? setTimeout : root.setTimeout;
+    var bind   = hop.bind;
+    var _setTimeout   = typeof setTimeout   != UNDEFINED ? setTimeout   : global.setTimeout  ;
+    var _setImmediate = typeof setImmediate != UNDEFINED ? setImmediate : global.setImmediate;
 (
     typeof define !== 'function' || !define.amd
   ? typeof module != UNDEFINED && module.exports
   // CommonJS
   ? function (deps, factory) { module.exports = factory(); }
   // Browser
-  : function (deps, factory) { root[name] = factory(); }
+  : function (deps, factory) { global[name] = factory(); }
   // AMD
   : define
 )
@@ -304,15 +305,66 @@
         for ( ; i < len; ++i ) {
             sto(
                 (function (_fn) {
-                    return function () {
-                        _fn.apply(_self, slice.call(args, 0));
-                    }
+                    return function () { _fn.apply(_self, args); };
                 }(_all[i]))
                 , delay
             );
         }
         return _self;
-    }
+    };
+
+    /**
+     * Emit `event` with the given args asynchronously.
+     *
+     * @param  (String) event name
+     * @param  (Mixed) ...
+     * @return (OnEmit)
+     */
+    OnEmit.prototype.emitAsync = function(event, arg1, arg2/*, arg3...*/) {
+        var _self = this, _callbacks, _list, _any, _all;
+        var sim = OnEmit.setImmediate || _setImmediate || _setTimeout || OnEmit.setTimeout;
+
+        // If no listeners, return quickly
+        if ( !(_callbacks = _self._callbacks) ) {
+            return _self;
+        }
+
+        _list = _callbacks[event];
+        _any = _callbacks['*'];
+
+        if ( _list && _list.length ) {
+            if ( _any && _any.length ) {
+                _all = _list.concat(_any);
+            }
+            else {
+                _all = _list;
+            }
+        }
+        else {
+            if ( _any && _any.length ) {
+                _all = _any;
+            }
+            else {
+                return _self;
+            }
+        }
+
+        var len = _all.length
+        // ,   args = splice.call(arguments, 0, 0, _self)
+        // ,   args = slice.call(arguments)
+        ,   args = arguments
+        ,   i = 0
+        ;
+        for ( ; i < len; ++i ) {
+            // sim(bind.apply(_all[i], args));
+            sim((function (_fn) {
+                return function () { _fn.apply(_self, args); };
+            }(_all[i])))
+        }
+        return _self;
+    };
+
+
 
     /**
      * Bind this emitter to obj.
@@ -332,7 +384,7 @@
             obj[key] = bind.call(proto[key], _self);
         }
         return obj;
-    }
+    };
 
     /**
      * Return array of callbacks for `event`.
@@ -372,14 +424,22 @@
     // Polyfill for .bind()
     if ( 'function' != typeof bind ) {
         bind = function (oThis) {
-            var aArgs = slice.call(arguments, 1)
+            var fArgs = slice.call(arguments, 1)
             ,   fToBind = this
             ,   fNOP = function () {}
-            ,   fBound = function () {
-                    return fToBind.apply(this instanceof fNOP && oThis
-                            ? this
-                            : oThis,
-                            aArgs.concat(slice.call(arguments)));
+            ,   fBound = fArgs.length 
+                ? function () {
+                    var aArgs = arguments;
+                    return fToBind.apply(
+                        this instanceof fNOP && oThis ? this : oThis
+                      , aArgs.lenmgth ? fArgs.concat(slice.call(aArgs)) : fArgs 
+                    );
+                }
+                : function () {
+                    return fToBind.apply(
+                        this instanceof fNOP && oThis ? this : oThis
+                      , arguments 
+                    );
                 }
             ;
             fNOP.prototype = fToBind.prototype;
@@ -398,4 +458,4 @@
     }
 
 }
-('OnEmit', typeof global == 'undefined' ? this : global));
+('OnEmit', typeof self == 'undefined' ? typeof global == 'undefined' ? this : global : self));
