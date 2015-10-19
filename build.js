@@ -6,18 +6,17 @@ var fs          = require('fs');
 var path        = require('path');
 var querystring = require('querystring');
 
-var hashes = ['onemit'];
 
 var dir = __dirname;
 // var dir = path.join(__dirname, '..'); // uncomment this if you move build.js to /tools folder
 var dist = path.join(dir, 'dist');
-var packo = JSON.parse(fs.readFileSync(path.join(dir, 'package.json')));
+var packo = require(path.join(dir, 'package.json'));
 var version = packo.version;
+var hashes = [path.basename(packo.main, '.js')];
 
 if ( !fs.existsSync(dist) ) {
     fs.mkdir(dist)
 }
-
 
 hashes.forEach(function (name) {
     var filename = path.join(dir, name + '.js');
