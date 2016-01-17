@@ -1,6 +1,7 @@
-# On / Emit
+# OnEmit
 
 Event emitter that returns the event on emit [ .on() / .emit() / .emitAsync().then() ]
+
 [![Build Status](https://travis-ci.org/duzun/onemit.svg?branch=master)](https://travis-ci.org/duzun/onemit)
 [![Dependencies](https://david-dm.org/duzun/onemit.svg)](https://david-dm.org/duzun/onemit#info=dependencies&view=table)
 [![devDependencies](https://david-dm.org/duzun/onemit/dev-status.svg)](https://david-dm.org/duzun/onemit#info=devDependencies&view=table)
@@ -49,7 +50,7 @@ emitter.off('anything');
 ```
 
 
-### As a mixin:
+#### As a mixin:
 
 The `OnEmit` may also be used as a mixin.
 For example a "plain" object may become an emitter,
@@ -57,10 +58,11 @@ For example a "plain" object may become an emitter,
 ```js
 var user = { name: 'dima' };
 OnEmit(user);
+user.on('im a user', function (event){ /*...*/ })
 var event = user.emit('im a user');
 ```
 
-### As a `prototype` mixin:
+#### As a `prototype` mixin:
 
 You may extend an existing prototype.
 
@@ -69,6 +71,17 @@ OnEmit(User.prototype);
 var emitter = new User;
 var event = emitter.emit('im a user as prototype method');
 ```
+
+#### Bind `emitter` to an object
+
+```js
+var emitter = new OnEmit;
+var user = { name: 'dima' };
+emitter.bind(user);
+user.on(...);
+var event = user.emit('im a user');
+```
+
 
 ### Register an `event` handler `fn`.
 ```js
@@ -81,13 +94,13 @@ emitter.on(event, fn);
     * The returned `value` goes into `emittedEvent.result[idx]`. `value` could be a promise (used with `.emitAsync()`).
 
 
-### Register an `event` handler `fn` only once.
+#### Register an `event` handler `fn` only once.
 ```js
 emitter.only(event, fn);
 ```
 
 
-### Register a single-shot `event` handler `fn`
+#### Register a single-shot `event` handler `fn`
 removed immediately after it is invoked the first time.
 ```js
 emitter.once(event, fn);
@@ -120,7 +133,7 @@ event listeners have returned.
 Event handlers can manipulate `event` properties before return.
 
 
-### Emit an `event` asynchronously.
+#### Emit an `event` asynchronously.
 ```js
 emitter.emitAsync(event, ...).then(function (event){
     // do something after all events have fired
@@ -131,7 +144,7 @@ emitter.emitAsync(event, ...).then(function (event){
 `emitAsync` uses `OnEmit.setImmediate` or `setImmediate`, if available, or `setTimeout` otherwise.
 
 
-### Emit an `event` after `delay` milliseconds.
+#### Emit an `event` after `delay` milliseconds.
 ```js
 emitter.emitAfter(delay, event, ...).then(function (event){
     // do something after all events have fired
