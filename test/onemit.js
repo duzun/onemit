@@ -342,6 +342,8 @@ describe('OnEmit', function() {
                 function foo() {}
                 onemit.on('foo', foo);
                 onemit.listeners('foo').should.eql([foo]);
+                onemit.listeners('bar').should.eql([]);
+                onemit.listeners('*').should.eql([]);
             });
         });
 
@@ -349,6 +351,8 @@ describe('OnEmit', function() {
             it('should return an empty array', function() {
                 var onemit = new OnEmit;
                 onemit.listeners('foo').should.eql([]);
+                onemit.listeners('bar').should.eql([]);
+                onemit.listeners('*').should.eql([]);
             });
         });
     });
