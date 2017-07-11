@@ -7,6 +7,7 @@
     "emitter",
     "events"
   ],
+  "reveal": true,
   "author": {
     "name": "Dumitru Uzun",
     "email": "contact@duzun.me",
