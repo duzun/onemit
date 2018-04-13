@@ -5,6 +5,6 @@ test:
 		--reporter spec
 
 build:
-     node build.js
-        
+	npm run build
+
 .PHONY: test

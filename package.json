@@ -1,6 +1,6 @@
 {
   "name": "onemit",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Event emitter",
   "keywords": [
     "onemit",
@@ -27,9 +27,13 @@
     "type": "git",
     "url": "https://github.com/duzun/onemit.git"
   },
-  "main": "onemit.js",
+  "main": "dist/onemit.js",
+  "module": "onemit.js",
+  "esnext": "onemit.js",
+  "jsnext:main": "onemit.js",
+  "unpkg": "dist/onemit.min.js",
   "scripts": {
-    "build": "node build",
+    "build": "npm test && gccs --compilation_level WHITESPACE_ONLY --formatting pretty_print -- onemit.js dist/onemit.js && gccs dist/onemit.js",
     "verup": "verup",
     "test": "mocha --require should --reporter spec"
   },
@@ -43,8 +47,23 @@
     ]
   },
   "devDependencies": {
+    "gccs": "^1.2.0",
     "mocha": "*",
     "should": "*",
     "verup": "^1.x"
+  },
+  "jshintConfig": {
+    "laxbreak": true,
+    "laxcomma": true,
+    "undef": true,
+    "unused": true,
+    "sub": true,
+    "expr": true,
+    "bitwise": false,
+    "eqeqeq": false,
+    "boss": true,
+    "eqnull": true,
+    "scripturl": true,
+    "-W041": false
   }
 }

@@ -6,16 +6,16 @@
     "emitter",
     "events"
   ],
-  "version": "2.0.1",
+  "version": "2.0.2",
   "license": "MIT",
   "main": "onemit.js",
+  "unpkg": "dist/onemit.min.js",
   "homepage": "https://github.com/duzun/onemit",
   "ignore": [
     "**/.*",
     "node_modules",
     "bower_components",
     "test",
-    "Makefile",
-    "package.json"
+    "Makefile"
   ]
 }

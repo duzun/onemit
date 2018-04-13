@@ -5,7 +5,7 @@
  *
  *   @author  Dumitru Uzun (DUzun.Me)
  *   @license MIT
- *   @version 2.0.1
+ *   @version 2.0.2
  *   @repo    https://github.com/duzun/onemit
  */
 
@@ -70,18 +70,20 @@
  *              OnEmit.emit('bar'); // -> fn('bar')
  *
  */
+
+/*jshint browser: true, node: true, esversion: 6*/
 ;(function (name, global, undefined) {
     'use strict';
-    var UNDEFINED = undefined + '';
+    const UNDEFINED = undefined + '';
 
     // Native methods
-    var hop    = ({}).hasOwnProperty;
-    var slice  = [].slice;
-    var splice = [].splice;
-    var bind   = hop.bind;
-    var _setTimeout   = typeof setTimeout   != UNDEFINED ? setTimeout   : global.setTimeout  ;
-    var _setImmediate = typeof setImmediate != UNDEFINED ? setImmediate : global.setImmediate;
-    var _Promise      = typeof Promise      != UNDEFINED ? Promise      : global.Promise;
+    const hop    = ({}).hasOwnProperty;
+    const slice  = [].slice;
+    const splice = [].splice;
+    let bind   = hop.bind;
+    let _setTimeout   = typeof setTimeout   != UNDEFINED ? setTimeout   : global.setTimeout  ;
+    let _setImmediate = typeof setImmediate != UNDEFINED ? setImmediate : global.setImmediate;
+    const _Promise    = typeof Promise      != UNDEFINED ? Promise      : global.Promise;
 (
     typeof define !== 'function' || !define.amd
   ? typeof module != UNDEFINED && module.exports
@@ -100,7 +102,7 @@
      */
     function OnEmit(obj) {
         if (obj) return _extend(obj, OnEmit.prototype);
-    };
+    }
 
     /**
      * Event constructor.
@@ -108,7 +110,7 @@
      * @param (Object) props - { type: "eventName", ... } or just "eventName"
      */
     function EmitEvent(props) {
-        var event = this;
+        const event = this;
         if ( !(event instanceof EmitEvent) ) {
             return new EmitEvent(props);
         }
@@ -135,8 +137,8 @@
          *  @param  (Function) fn    - event handler
          *  @return (OnEmit)
          */
-        on: function(event, fn) {
-            var _list = _listeners.call(this, event, true);
+        on(event, fn) {
+            const _list = _listeners.call(this, event, true);
             _list.push(fn);
             return this;
         },
@@ -149,8 +151,8 @@
          *  @param  (Function) fn    - event handler
          *  @return (OnEmit)
          */
-        only: function(event, fn) {
-            var _list = _listeners.call(this, event, true);
+        only(event, fn) {
+            const _list = _listeners.call(this, event, true);
             if ( _list.indexOf(fn) < 0 ) {
                 _list.push(fn);
             }
@@ -164,7 +166,7 @@
          * @param  (Function) fn
          * @return (OnEmit)
          */
-        once: function(event, fn) {
+        once(event, fn) {
             function _fn() {
                 this.off(event, _fn);
                 fn.apply(this, arguments);
@@ -187,8 +189,8 @@
          *     .off()          - remove all listeners for all events
          *
          */
-        off: function (event, fn) {
-            var _callbacks = this._callbacks;
+        off(event, fn) {
+            const _callbacks = this._callbacks;
 
             // No handlers, return quickly
             if ( !_callbacks ) return this;
@@ -200,7 +202,7 @@
             }
 
             // specific event:
-            var _list = _callbacks[event];
+            const _list = _callbacks[event];
             if (!_list) return this;
 
             // remove all handlers
@@ -210,7 +212,7 @@
             }
 
             // remove specific handler
-            var _cb;
+            let _cb;
             for (var i = _list.length; i--;) {
                 _cb = _list[i];
                 if ( _cb === fn || _cb.fn === fn ) {
@@ -227,22 +229,21 @@
          * @param  (Mixed) ...
          * @return (Array)
          */
-        emit: function(event, arg1, arg2/*, arg3...*/) {
-            var _self = this
-            ,   _type, _callbacks, _list, _any, _all
-            ,   _ret = []
-            ,   _event = new EmitEvent(event);
-            ;
+        emit(event, arg1, arg2/*, arg3...*/) {
+            const _self = this;
+            const _ret = [];
+            const _event = new EmitEvent(event);
             _event.result = _ret;
 
+            var _callbacks, _all;
             // If no listeners, return quickly
             if ( !(_callbacks = _self._callbacks) ) {
                 return _event;
             }
 
-            _type = _event.type;
-            _list = _callbacks[_type];
-            _any = _callbacks['*'];
+            let _type = _event.type;
+            const _list = _callbacks[_type];
+            const _any = _callbacks['*'];
 
             if ( _list && _list.length ) {
                 if ( _any && _any.length ) {
@@ -261,14 +262,11 @@
                 }
             }
 
-            var args = slice.call(arguments, 0)
-            ,   len = _all.length
-            ,   i = 0
-            ,   r
-            ;
+            const args = slice.call(arguments, 0);
+
             args[0] = _event;
-            for ( ; i < len; ++i ) {
-                r = _all[i].apply(_self, args);
+            for ( let i = 0, len = _all.length; i < len; ++i ) {
+                let r = _all[i].apply(_self, args);
                 if ( r !== undefined ) {
                     _ret.push(r);
                 }
@@ -285,24 +283,24 @@
          * @param  (Mixed) ...
          * @return (Promise)
          */
-        emitAfter: function(delay, event, arg1, arg2/*, arg3...*/) {
-            var Promise = OnEmit.Promise || _Promise;
-            var _self = this
-            ,   _type, _callbacks, _list, _any, _all
-            ,   _ret = []
-            ,   i = +(typeof delay == 'number')
-            ,   _event = new EmitEvent(arguments[i]);
-            ;
+        emitAfter(delay, event, arg1, arg2/*, arg3...*/) {
+            const Promise = OnEmit.Promise || _Promise;
+            const _self = this;
+
+            const _ret = [];
+            let i = +(typeof delay == 'number');
+            const _event = new EmitEvent(arguments[i]);
             _event.result = _ret;
 
+            var _callbacks, _all;
             // If no listeners, return quickly
             if ( !(_callbacks = _self._callbacks) ) {
                 return Promise.resolve(_event);
             }
 
-            _type = _event.type;
-            _list = _callbacks[_type];
-            _any = _callbacks['*'];
+            const _type = _event.type;
+            const _list = _callbacks[_type];
+            const _any = _callbacks['*'];
 
             if ( _list && _list.length ) {
                 if ( _any && _any.length ) {
@@ -321,9 +319,9 @@
                 }
             }
 
-            var len = _all.length
-            ,   args = slice.call(arguments, i)
-            ;
+            const len = _all.length;
+            const args = slice.call(arguments, i);
+
             args[0] = _event;
             if ( !i ) {
                 delay = 0;
@@ -334,7 +332,7 @@
             for ( ; i < len; ++i ) {
                 _ret[i] = PromiseTimeout.call(_self, _all[i], args, delay);
             }
-            return Promise.all(_ret).then(function (result) {
+            return Promise.all(_ret).then((result) => {
                 _event.result = result;
                 return _event;
             });
@@ -347,23 +345,23 @@
          * @param  (Mixed) ...
          * @return (OnEmit)
          */
-        emitAsync: function(event, arg1, arg2/*, arg3...*/) {
-            var Promise = OnEmit.Promise || _Promise;
-            var _self = this
-            ,   _type, _callbacks, _list, _any, _all
-            ,   _ret = []
-            ,   _event = new EmitEvent(event);
-            ;
+        emitAsync(event, arg1, arg2/*, arg3...*/) {
+            const Promise = OnEmit.Promise || _Promise;
+            const _self = this;
+            const _event = new EmitEvent(event);
+            const _ret = [];
             _event.result = _ret;
+
+            var _callbacks, _all;
 
             // If no listeners, return quickly
             if ( !(_callbacks = _self._callbacks) ) {
                 return Promise.resolve(_event);
             }
 
-            _type = _event;
-            _list = _callbacks[_type];
-            _any = _callbacks['*'];
+            const _type = _event;
+            const _list = _callbacks[_type];
+            const _any = _callbacks['*'];
 
             if ( _list && _list.length ) {
                 if ( _any && _any.length ) {
@@ -382,16 +380,16 @@
                 }
             }
 
-            var len = _all.length
-            // ,   args = _append([_self], arguments)
-            ,   args = slice.call(arguments, 0)
-            ,   i = 0
-            ;
+            const len = _all.length;
+            const args = slice.call(arguments, 0);
+            // const args = _append([_self], arguments);
+
             args[0] = _event;
-            for ( ; i < len; ++i ) {
+            for ( let i = 0; i < len; ++i ) {
                 _ret[i] = PromiseTimeout.call(_self, _all[i], args);
             }
-            return Promise.all(_ret).then(function (result) {
+            return Promise.all(_ret)
+            .then((result) => {
                 _event.result = result;
                 return _event;
             });
@@ -406,12 +404,11 @@
          * @param  (Object) obj
          * @return (Object) obj
          */
-        bind: function(obj) {
-            var  proto = OnEmit.prototype
-            ,   _self = this
-            ,   key
-            ;
-            for ( key in proto ) if ( hop.call(proto, key) && 'function' == typeof proto[key] ) {
+        bind(obj) {
+            const proto = OnEmit.prototype;
+            const _self = this;
+
+            for ( let key in proto ) if ( hop.call(proto, key) && 'function' == typeof proto[key] ) {
                 obj[key] = bind.call(proto[key], _self);
             }
             return obj;
@@ -423,8 +420,8 @@
          * @param  (String) event
          * @return (Boolean)
          */
-        hasListeners: function(event) {
-            var _list = _listeners.call(this, event, false);
+        hasListeners(event) {
+            const _list = _listeners.call(this, event, false);
             return !!(_list && _list.length);
         },
 
@@ -435,18 +432,19 @@
          * @param  (Function) fn - event handler
          * @return (Boolean)
          */
-        hasListener: function (event, fn) {
+        hasListener(event, fn) {
             if ( !fn && event ) {
                 fn = event;
                 event = '*';
             }
+            var _list;
             if ( event != '*' ) {
-                var _list = _listeners.call(this, event, false);
+                _list = _listeners.call(this, event, false);
                 return !!(_list && ~_list.indexOf(fn));
             }
             else {
-                var _list = this._callbacks;
-                for ( var key in _list ) if ( hop.call(_list, key) ) {
+                _list = this._callbacks;
+                for ( let key in _list ) if ( hop.call(_list, key) ) {
                     if ( _list[key].indexOf(fn) > -1 ) return true;
                 }
             }
@@ -465,12 +463,12 @@
     });
 
     function _listeners(event, addMode) {
-        var _callbacks = this._callbacks || (this._callbacks = {})
+        const _callbacks = this._callbacks || (this._callbacks = {})
         ,   _type = event.type || String(event)
         ,   _list = _callbacks[_type] || addMode && (_callbacks[_type] = []) || []
         ;
         return _list;
-    };
+    }
 
     OnEmit.Event = EmitEvent;
 
@@ -478,13 +476,13 @@
      *
      */
     function PromiseTimeout(fn, args, delay) {
-        var Promise = OnEmit.Promise || _Promise;
-        var that = this;
+        const Promise = OnEmit.Promise || _Promise;
+        const that = this;
         delay = +delay;
-        var timeoutFn = !delay && (OnEmit.setImmediate || _setImmediate) || OnEmit.setTimeout || _setTimeout;
+        const timeoutFn = !delay && (OnEmit.setImmediate || _setImmediate) || OnEmit.setTimeout || _setTimeout;
 
-        return new Promise(function (resolve, reject) {
-            timeoutFn(function () {
+        return new Promise((resolve, reject) => {
+            timeoutFn(() => {
                 try {
                     // `resolve` should accept a thenable and resolve/reject this Promise with it
                     resolve(fn.apply(that, args));
@@ -501,7 +499,7 @@
                 catch(err) {
                     reject(err);
                 }
-            }, delay)
+            }, delay);
         });
     }
 
@@ -522,7 +520,7 @@
      * @api private
      */
     function _extend(obj, from) {
-        for ( var key in from ) if ( hop.call(from, key) ) {
+        for ( let key in from ) if ( hop.call(from, key) ) {
             obj[key] = from[key];
         }
         return obj;
