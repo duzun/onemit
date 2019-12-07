@@ -5,6 +5,6 @@ test:
 		--reporter spec
 
 build:
-	npm run build
+	npm run build.min
 
 .PHONY: test
