@@ -5,7 +5,7 @@
  *
  *   @author  Dumitru Uzun (DUzun.Me)
  *   @license MIT
- *   @version 2.0.3
+ *   @version 2.1.0
  *   @repo    https://github.com/duzun/onemit
  */
 
@@ -72,37 +72,24 @@
  */
 
 /*jshint browser: true, node: true, esversion: 6*/
-;(function (name, global, undefined) {
-    'use strict';
-    const UNDEFINED = undefined + '';
+    const root = typeof globalThis == 'undefined' ? typeof global == 'undefined' ? self : global : globalThis;
 
     // Native methods
     const hop    = ({}).hasOwnProperty;
-    const slice  = [].slice;
-    const splice = [].splice;
-    let bind   = hop.bind;
-    let _setTimeout   = typeof setTimeout   != UNDEFINED ? setTimeout   : global.setTimeout  ;
-    let _setImmediate = typeof setImmediate != UNDEFINED ? setImmediate : global.setImmediate;
-    const _Promise    = typeof Promise      != UNDEFINED ? Promise      : global.Promise;
+    let { bind } = hop;
+    const { slice, splice } = [];
+
+    let _setTimeout   = typeof setTimeout   != 'undefined' ? setTimeout   : root.setTimeout  ;
+    let _setImmediate = typeof setImmediate != 'undefined' ? setImmediate : root.setImmediate;
+    const _Promise    = typeof Promise      != 'undefined' ? Promise      : root.Promise;
 
     var _timersInited;
-(
-    typeof define !== 'function' || !define.amd
-  ? typeof module != UNDEFINED && module.exports
-  // CommonJS
-  ? function (deps, factory) { module.exports = factory(); }
-  // Browser
-  : function (deps, factory) { global[name] = factory(); }
-  // AMD
-  : define
-)
-/*define*/([], function factory() {
 
     /**
      * Initialize a new `OnEmit`.
      *
      */
-    function OnEmit(obj) {
+    export default function OnEmit(obj) {
         if (obj) return _extend(obj, OnEmit.prototype);
     }
 
@@ -523,12 +510,6 @@
     }
 
     /**
-     * Expose `OnEmit`.
-     */
-    return OnEmit;
-});
-
-    /**
      * Copy properties to `obj` from `from`
      *
      * @param  (Object) obj
@@ -577,6 +558,28 @@
 
     // bind = null; // Uncomment this line to test with polyfill
 
+    function _initTimers() {
+        if(_timersInited) return _timersInited;
+        _timersInited = root;
+
+        if ( 'function' != typeof _setTimeout ) {
+            // In Firefox Addons there is no setTimeout global. We have to load it from a module.
+            if ( 'function' == typeof 'require' ) {
+                var TIMERS  = require("sdk/timers");
+                _timersInited = TIMERS;
+                _setTimeout = TIMERS.setTimeout;
+                // clearTimeout  = TIMERS.clearTimeout;
+
+                // In Firefox SDK there is setImmediate, so use it!
+                if ( !_setImmediate ) {
+                    _setImmediate = TIMERS.setImmediate;
+                }
+            }
+        }
+
+        return _timersInited;
+    }
+
     // Polyfill for .bind()
     if ( 'function' != typeof bind ) {
         bind = function (oThis) {
@@ -603,28 +606,3 @@
             return fBound;
         };
     }
-
-    function _initTimers() {
-        if(_timersInited) return _timersInited;
-        _timersInited = global;
-
-        if ( 'function' != typeof _setTimeout ) {
-            // In Firefox Addons there is no setTimeout global. We have to load it from a module.
-            if ( 'function' == typeof 'require' ) {
-                var TIMERS  = require("sdk/timers");
-                _timersInited = TIMERS;
-                _setTimeout = TIMERS.setTimeout;
-                // clearTimeout  = TIMERS.clearTimeout;
-
-                // In Firefox SDK there is setImmediate, so use it!
-                if ( !_setImmediate ) {
-                    _setImmediate = TIMERS.setImmediate;
-                }
-            }
-        }
-
-        return _timersInited;
-    }
-
-}
-('OnEmit', typeof globalThis == 'undefined' ? typeof global == 'undefined' ? self : global : globalThis));
