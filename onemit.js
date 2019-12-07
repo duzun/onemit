@@ -5,7 +5,7 @@
  *
  *   @author  Dumitru Uzun (DUzun.Me)
  *   @license MIT
- *   @version 2.1.0
+ *   @version 2.1.1
  *   @repo    https://github.com/duzun/onemit
  */
 
@@ -78,12 +78,26 @@ const root = typeof globalThis == 'undefined' ? typeof global == 'undefined' ? s
 const hop    = ({}).hasOwnProperty;
 let { bind } = hop;
 const { slice, splice } = [];
+const _Promise = typeof Promise != 'undefined' ? Promise : root.Promise;
 
-let _setTimeout   = typeof setTimeout   != 'undefined' ? setTimeout   : root.setTimeout  ;
-let _setImmediate = typeof setImmediate != 'undefined' ? setImmediate : root.setImmediate;
-const _Promise    = typeof Promise      != 'undefined' ? Promise      : root.Promise;
+let TIMERS = typeof self !== 'undefined' && isFunction(self.setTimeout)
+    ? self
+    : root
+;
 
-var _timersInited;
+if( !isFunction(TIMERS.setTimeout) ) {
+    if( typeof require !== 'undefined' ) {
+        // Firefox Addon
+        TIMERS = require('sdk/timers');
+    }
+}
+
+const {
+    setTimeout,
+    // clearTimeout,
+    setImmediate,
+}  = TIMERS
+;
 
 /**
  * Initialize a new `OnEmit`.
@@ -397,7 +411,7 @@ _extend(OnEmit.prototype, {
         const proto = OnEmit.prototype;
         const _self = this;
 
-        for ( let key in proto ) if ( hop.call(proto, key) && 'function' == typeof proto[key] ) {
+        for ( let key in proto ) if ( hop.call(proto, key) && isFunction(proto[key]) ) {
             obj[key] = bind.call(proto[key], _self);
         }
         return obj;
@@ -478,7 +492,7 @@ function PromiseTimeout(fn, args, delay) {
 
                 // // This is how `resolve` shoud behave:
                 // var ret = fn.apply(that, args);
-                // if ( ret && typeof ret.then == 'function' ) {
+                // if ( ret && isFunction(ret.then) ) {
                     // ret.then(resolve, reject);
                 // }
                 // else {
@@ -493,17 +507,9 @@ function PromiseTimeout(fn, args, delay) {
 }
 
 function getTimeoutFn(delay) {
-    let timeoutFn = delay ? OnEmit.setTimeout || _setTimeout : OnEmit.setImmediate || _setImmediate;
-    if(!timeoutFn) {
-        if(!_timersInited) {
-            if(_initTimers()) {
-                return getTimeoutFn(delay);
-            }
-        }
-
-        if(!delay) {
-            return getTimeoutFn(1);
-        }
+    let timeoutFn = delay ? OnEmit.setTimeout || setTimeout : OnEmit.setImmediate || setImmediate;
+    if(!timeoutFn && !delay) {
+        timeoutFn = getTimeoutFn(1);
     }
 
     return timeoutFn;
@@ -556,32 +562,15 @@ function _append(array, args/*, ...*/) {
     return array;
 }
 
-// bind = null; // Uncomment this line to test with polyfill
-
-function _initTimers() {
-    if(_timersInited) return _timersInited;
-    _timersInited = root;
-
-    if ( 'function' != typeof _setTimeout ) {
-        // In Firefox Addons there is no setTimeout global. We have to load it from a module.
-        if ( 'function' == typeof 'require' ) {
-            var TIMERS  = require("sdk/timers");
-            _timersInited = TIMERS;
-            _setTimeout = TIMERS.setTimeout;
-            // clearTimeout  = TIMERS.clearTimeout;
-
-            // In Firefox SDK there is setImmediate, so use it!
-            if ( !_setImmediate ) {
-                _setImmediate = TIMERS.setImmediate;
-            }
-        }
-    }
-
-    return _timersInited;
+function isFunction(obj) {
+    return obj instanceof Function || typeof obj == 'function';
 }
 
+
+// bind = null; // Uncomment this line to test with polyfill
+
 // // Polyfill for .bind()
-// if ( 'function' != typeof bind ) {
+// if ( !isFunction(bind) ) {
 //     bind = function (oThis) {
 //         var fArgs = slice.call(arguments, 1)
 //         ,   fToBind = this

@@ -11,7 +11,7 @@
      *
      *   @author  Dumitru Uzun (DUzun.Me)
      *   @license MIT
-     *   @version 2.1.0
+     *   @version 2.1.1
      *   @repo    https://github.com/duzun/onemit
      */
 
@@ -86,18 +86,24 @@
         slice = _ref.slice,
         splice = _ref.splice;
 
-    var _setTimeout = typeof setTimeout != 'undefined' ? setTimeout : root.setTimeout;
-
-    var _setImmediate = typeof setImmediate != 'undefined' ? setImmediate : root.setImmediate;
-
     var _Promise = typeof Promise != 'undefined' ? Promise : root.Promise;
 
-    var _timersInited;
+    var TIMERS = typeof self !== 'undefined' && isFunction(self.setTimeout) ? self : root;
+
+    if (!isFunction(TIMERS.setTimeout)) {
+      if (typeof require !== 'undefined') {
+        // Firefox Addon
+        TIMERS = require('sdk/timers');
+      }
+    }
+
+    var _TIMERS = TIMERS,
+        setTimeout = _TIMERS.setTimeout,
+        setImmediate = _TIMERS.setImmediate;
     /**
      * Initialize a new `OnEmit`.
      *
      */
-
 
     function OnEmit(obj) {
       if (obj) return _extend(obj, OnEmit.prototype);
@@ -433,7 +439,7 @@
         var _self = this;
 
         for (var key in proto) {
-          if (hop.call(proto, key) && 'function' == typeof proto[key]) {
+          if (hop.call(proto, key) && isFunction(proto[key])) {
             obj[key] = _bind.call(proto[key], _self);
           }
         }
@@ -517,7 +523,7 @@
             // `resolve` should accept a thenable and resolve/reject this Promise with it
             resolve(fn.apply(that, args)); // // This is how `resolve` shoud behave:
             // var ret = fn.apply(that, args);
-            // if ( ret && typeof ret.then == 'function' ) {
+            // if ( ret && isFunction(ret.then) ) {
             // ret.then(resolve, reject);
             // }
             // else {
@@ -531,18 +537,10 @@
     }
 
     function getTimeoutFn(delay) {
-      var timeoutFn = delay ? OnEmit.setTimeout || _setTimeout : OnEmit.setImmediate || _setImmediate;
+      var timeoutFn = delay ? OnEmit.setTimeout || setTimeout : OnEmit.setImmediate || setImmediate;
 
-      if (!timeoutFn) {
-        if (!_timersInited) {
-          if (_initTimers()) {
-            return getTimeoutFn(delay);
-          }
-        }
-
-        if (!delay) {
-          return getTimeoutFn(1);
-        }
+      if (!timeoutFn && !delay) {
+        timeoutFn = getTimeoutFn(1);
       }
 
       return timeoutFn;
@@ -568,14 +566,11 @@
       return obj;
     }
 
-
-    function _initTimers() {
-      if (_timersInited) return _timersInited;
-      _timersInited = root;
-
-      return _timersInited;
-    } // // Polyfill for .bind()
-    // if ( 'function' != typeof bind ) {
+    function isFunction(obj) {
+      return obj instanceof Function || typeof obj == 'function';
+    } // bind = null; // Uncomment this line to test with polyfill
+    // // Polyfill for .bind()
+    // if ( !isFunction(bind) ) {
     //     bind = function (oThis) {
     //         var fArgs = slice.call(arguments, 1)
     //         ,   fToBind = this
