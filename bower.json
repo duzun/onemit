@@ -6,7 +6,7 @@
     "emitter",
     "events"
   ],
-  "version": "2.0.2",
+  "version": "2.0.3",
   "license": "MIT",
   "main": "onemit.js",
   "unpkg": "dist/onemit.min.js",

@@ -5,7 +5,7 @@
  *
  *   @author  Dumitru Uzun (DUzun.Me)
  *   @license MIT
- *   @version 2.0.2
+ *   @version 2.0.3
  *   @repo    https://github.com/duzun/onemit
  */
 
@@ -84,6 +84,8 @@
     let _setTimeout   = typeof setTimeout   != UNDEFINED ? setTimeout   : global.setTimeout  ;
     let _setImmediate = typeof setImmediate != UNDEFINED ? setImmediate : global.setImmediate;
     const _Promise    = typeof Promise      != UNDEFINED ? Promise      : global.Promise;
+
+    var _timersInited;
 (
     typeof define !== 'function' || !define.amd
   ? typeof module != UNDEFINED && module.exports
@@ -479,7 +481,7 @@
         const Promise = OnEmit.Promise || _Promise;
         const that = this;
         delay = +delay;
-        const timeoutFn = !delay && (OnEmit.setImmediate || _setImmediate) || OnEmit.setTimeout || _setTimeout;
+        const timeoutFn = getTimeoutFn(delay);
 
         return new Promise((resolve, reject) => {
             timeoutFn(() => {
@@ -503,6 +505,22 @@
         });
     }
 
+    function getTimeoutFn(delay) {
+        let timeoutFn = delay ? OnEmit.setTimeout || _setTimeout : OnEmit.setImmediate || _setImmediate;
+        if(!timeoutFn) {
+            if(!_timersInited) {
+                if(_initTimers()) {
+                    return getTimeoutFn(delay);
+                }
+            }
+
+            if(!delay) {
+                return getTimeoutFn(1);
+            }
+        }
+
+        return timeoutFn;
+    }
 
     /**
      * Expose `OnEmit`.
@@ -586,19 +604,27 @@
         };
     }
 
-    if ( 'function' != typeof _setTimeout ) {
-        // In Firefox Addons there is no setTimeout global. We have to load it from a module.
-        if ( 'function' == typeof 'require' ) {
-            var TIMERS  = require("sdk/timers");
-            _setTimeout = TIMERS.setTimeout;
-            // clearTimeout  = TIMERS.clearTimeout;
+    function _initTimers() {
+        if(_timersInited) return _timersInited;
+        _timersInited = global;
 
-            // In Firefox SDK there is setImmediate, so use it!
-            if ( !_setImmediate ) {
-                _setImmediate = TIMERS.setImmediate;
+        if ( 'function' != typeof _setTimeout ) {
+            // In Firefox Addons there is no setTimeout global. We have to load it from a module.
+            if ( 'function' == typeof 'require' ) {
+                var TIMERS  = require("sdk/timers");
+                _timersInited = TIMERS;
+                _setTimeout = TIMERS.setTimeout;
+                // clearTimeout  = TIMERS.clearTimeout;
+
+                // In Firefox SDK there is setImmediate, so use it!
+                if ( !_setImmediate ) {
+                    _setImmediate = TIMERS.setImmediate;
+                }
             }
         }
+
+        return _timersInited;
     }
 
 }
-('OnEmit', typeof self == 'undefined' ? typeof global == 'undefined' ? this : global : self));
+('OnEmit', typeof globalThis == 'undefined' ? typeof global == 'undefined' ? self : global : globalThis));

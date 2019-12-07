@@ -1,6 +1,6 @@
 /*
  MIT
-   @version 2.0.2
+   @version 2.0.3
    @repo    https://github.com/duzun/onemit
 */
 (function(name, global, undefined) {
@@ -12,6 +12,7 @@
   var _setTimeout = typeof setTimeout != UNDEFINED ? setTimeout : global.setTimeout;
   var _setImmediate = typeof setImmediate != UNDEFINED ? setImmediate : global.setImmediate;
   var _Promise = typeof Promise != UNDEFINED ? Promise : global.Promise;
+  var _timersInited;
   (typeof define !== "function" || !define.amd ? typeof module != UNDEFINED && module.exports ? function(deps, factory) {
     module.exports = factory();
   } : function(deps, factory) {
@@ -239,7 +240,7 @@
       var Promise = OnEmit.Promise || _Promise;
       var that = this;
       delay = +delay;
-      var timeoutFn = !delay && (OnEmit.setImmediate || _setImmediate) || OnEmit.setTimeout || _setTimeout;
+      var timeoutFn = getTimeoutFn(delay);
       return new Promise(function(resolve, reject) {
         timeoutFn(function() {
           try {
@@ -249,6 +250,20 @@
           }
         }, delay);
       });
+    }
+    function getTimeoutFn(delay) {
+      var timeoutFn = delay ? OnEmit.setTimeout || _setTimeout : OnEmit.setImmediate || _setImmediate;
+      if (!timeoutFn) {
+        if (!_timersInited) {
+          if (_initTimers()) {
+            return getTimeoutFn(delay);
+          }
+        }
+        if (!delay) {
+          return getTimeoutFn(1);
+        }
+      }
+      return timeoutFn;
     }
     return OnEmit;
   });
@@ -285,14 +300,22 @@
       return fBound;
     };
   }
-  if ("function" != typeof _setTimeout) {
-    if ("function" == typeof "require") {
-      var TIMERS = require("sdk/timers");
-      _setTimeout = TIMERS.setTimeout;
-      if (!_setImmediate) {
-        _setImmediate = TIMERS.setImmediate;
+  function _initTimers() {
+    if (_timersInited) {
+      return _timersInited;
+    }
+    _timersInited = global;
+    if ("function" != typeof _setTimeout) {
+      if ("function" == typeof "require") {
+        var TIMERS = require("sdk/timers");
+        _timersInited = TIMERS;
+        _setTimeout = TIMERS.setTimeout;
+        if (!_setImmediate) {
+          _setImmediate = TIMERS.setImmediate;
+        }
       }
     }
+    return _timersInited;
   }
-})("OnEmit", typeof self == "undefined" ? typeof global == "undefined" ? this : global : self);
+})("OnEmit", typeof globalThis == "undefined" ? typeof global == "undefined" ? self : global : globalThis);
 
