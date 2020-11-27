@@ -1,7 +1,7 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
-    (global = global || self, global.OnEmit = factory());
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.OnEmit = factory());
 }(this, (function () { 'use strict';
 
     /**
@@ -11,7 +11,7 @@
      *
      *   @author  Dumitru Uzun (DUzun.Me)
      *   @license MIT
-     *   @version 2.1.1
+     *   @version 2.2.0
      *   @repo    https://github.com/duzun/onemit
      */
 
@@ -52,6 +52,9 @@
      *      OnEmit.once(event, fn)
      *          Register a single-shot `event` handler `fn`,
      *          removed immediately after it is invoked the first time.
+     *
+     *      OnEmit.when(event): Promise
+     *          Similar to .once(event, fn), only returns a promise.
      *
      *      OnEmit.off(event, fn)
      *          * Pass `event` and `fn` to remove a listener.
@@ -184,14 +187,47 @@
        * @param  (Function) fn
        * @return (OnEmit)
        */
-      once: function once(event, fn) {
+      once: function once(event, fn, _never) {
         function _fn() {
+          delete _fn.never;
           this.off(event, _fn);
           fn.apply(this, arguments);
         }
 
         _fn.fn = fn;
+        if (_never) _fn.never = _never;
         return this.on(event, _fn);
+      },
+
+      /**
+       * Wait for `event` with a Promise.
+       *
+       * @param  (String)   event
+       * @return (Promise)
+       */
+      when: function when(event, timeout) {
+        var self = this;
+        var Promise = OnEmit.Promise || _Promise;
+        return new Promise(function (resolve, reject) {
+          var on = function on(event) {
+            for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+              args[_key - 1] = arguments[_key];
+            }
+
+            event.args = args;
+            resolve(event);
+            reject = undefined;
+          };
+
+          self.once(event, on, reject);
+          if (timeout = +timeout) getTimeoutFn(timeout)(function () {
+            if (!reject) return;
+            var error = new Error("OnEmit.when(".concat(event, ") timeout after ").concat(timeout));
+            error.type = 'timeout';
+            reject(error);
+            self.off(event, on);
+          }, timeout);
+        });
       },
 
       /**
@@ -209,33 +245,63 @@
        *
        */
       off: function off(event, fn) {
+        var _this = this;
+
         var _callbacks = this._callbacks; // No handlers, return quickly
 
         if (!_callbacks) return this; // remove all handlers
 
         if (0 == arguments.length) {
-          if (_callbacks) this._callbacks = {};
+          if (_callbacks) {
+            for (event in _callbacks) {
+              if (hop.call(_callbacks, event)) {
+                this.off(event);
+              }
+            }
+
+            this._callbacks = {};
+          }
+
           return this;
         } // specific event:
 
 
         var _list = _callbacks[event];
-        if (!_list) return this; // remove all handlers
+        if (!_list) return this;
+        var neverList = []; // remove all handlers
 
         if (1 == arguments.length) {
           delete _callbacks[event];
-          return this;
-        } // remove specific handler
 
-
-        var _cb;
-
-        for (var i = _list.length; i--;) {
-          _cb = _list[i];
-
-          if (_cb === fn || _cb.fn === fn) {
-            splice.call(_list, i, 1);
+          for (var i = _list.length; i--;) {
+            if (_list[i]) {
+              var never = _list[i].never;
+              if (never) neverList.push(never);
+            }
           }
+        } else {
+          // remove specific handler
+          for (var _i = _list.length; _i--;) {
+            var _cb = _list[_i];
+
+            if (_cb === fn || _cb.fn === fn) {
+              var _never2 = _cb.never;
+              if (_never2) neverList.push(_never2);
+              splice.call(_list, _i, 1);
+            }
+          }
+        }
+
+        var neverListLength = neverList.length;
+
+        if (neverListLength) {
+          var timeoutFn = getTimeoutFn();
+          timeoutFn(function () {
+            for (var _i2 = 0; _i2 < neverListLength; ++_i2) {
+              var _never3 = neverList[_i2];
+              if (_never3) _never3.call(_this, event);
+            }
+          });
         }
 
         return this;
@@ -288,7 +354,10 @@
         args[0] = _event;
 
         for (var i = 0, len = _all.length; i < len; ++i) {
-          var r = _all[i].apply(_self, args);
+          var _fn = _all[i];
+          delete _fn.never;
+
+          var r = _fn.apply(_self, args);
 
           if (r !== undefined) {
             _ret.push(r);
@@ -299,7 +368,7 @@
       },
 
       /**
-       * Emit `event` with the given args after `delay` milluseconds.
+       * Emit `event` with the given args after `delay` milliseconds.
        *
        * @param  (Number) delay - milliseconds after which to call listeners
        * @param  (String) event name
@@ -356,7 +425,9 @@
         }
 
         for (; i < len; ++i) {
-          _ret[i] = PromiseTimeout.call(_self, _all[i], args, delay);
+          var _fn = _all[i];
+          delete _fn.never;
+          _ret[i] = PromiseTimeout.call(_self, _fn, args, delay);
         }
 
         return Promise.all(_ret).then(function (result) {
@@ -415,7 +486,9 @@
         args[0] = _event;
 
         for (var i = 0; i < len; ++i) {
-          _ret[i] = PromiseTimeout.call(_self, _all[i], args);
+          var _fn = _all[i];
+          delete _fn.never;
+          _ret[i] = PromiseTimeout.call(_self, _fn, args);
         }
 
         return Promise.all(_ret).then(function (result) {
