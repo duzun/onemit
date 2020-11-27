@@ -99,6 +99,49 @@ describe('OnEmit', function() {
         });
     });
 
+    describe('.when(event[, timeout])', function() {
+        it('should add a single-shot listener and return a Promise', function() {
+            var onemit = new OnEmit;
+            var calls = [];
+
+            let prom = onemit.when('foo')
+            .then(function(event) {
+                calls.push('one', event.args[0]);
+            });
+
+            onemit.emit('bar', 1);
+            calls.should.eql([]);
+            onemit.emit({type:'foo'}, 1);
+            onemit.emit('foo', 2);
+            onemit.emit({type:'foo'}, 3);
+
+            return prom.then(function() {
+                calls.should.eql([ 'one', 1 ]);
+            });
+        });
+
+        it('should reject after timeout if not fired', function() {
+            var onemit = new OnEmit;
+            var calls = [];
+
+            let prom = onemit.when('foo', 16)
+            .then(function(event) {
+                calls.push('one', event.args[0]);
+            });
+
+            onemit.emit('bar', 1);
+            onemit.emit({type:'notfoo'}, 1);
+
+            return prom.then(function() {
+                calls.should.eql(false); // never gets here
+            }, function(err) {
+                calls.should.eql([]);
+                (typeof err.message).should.eql('string');
+                err.type.should.eql('timeout');
+            });
+        });
+    });
+
     describe('.emit(event, ...)', function () {
         it('should emit immediately', function () {
             var onemit = new OnEmit;
@@ -414,7 +457,7 @@ describe('OnEmit', function() {
             var surogateProto = {};
             OnEmit.prototype = surogateProto;
 
-            for ( key in proto ) if ( proto.hasOwnProperty(key) && 'function' == typeof proto[key] ) {
+            for ( var key in proto ) if ( proto.hasOwnProperty(key) && 'function' == typeof proto[key] ) {
                 // if ( key == 'bind' ) continue;
                 methods.push(key);
                 surogateProto[key] = (function (meth, fn) {
@@ -425,20 +468,36 @@ describe('OnEmit', function() {
                 }(key, proto[key]));
             }
 
+            // .off() is last
+            let i = methods.indexOf('off');
+            if(~i) {
+                methods.splice(i, 1);
+                methods.push('off');
+            }
+
             // Test objects
             var plain = {};
             var onemit = new OnEmit;
             proto.bind.call(onemit, plain);
 
             // Restore original prototype
-            for ( var i = 0; i < methods.length; ++i ) {
-                var m = methods[i];
+            let next = [];
+            for ( let i = 0; i < methods.length; ++i ) {
+                let m = methods[i];
+
                 lastCall[m] = false;
-                plain[m](new String('test'));
+                let args = [new String('test')];
+                let p = plain[m].apply(plain, args);
+                if(p && p.then) {
+                    next.push(p.catch(()=>{})); // silence the errors
+                }
                 true.should.eql(lastCall[m]);
             }
 
-            OnEmit.prototype = proto;
+            return Promise.all(next)
+            .finally(() => {
+                OnEmit.prototype = proto;
+            });
         });
     });
 

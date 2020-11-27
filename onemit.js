@@ -5,7 +5,7 @@
  *
  *   @author  Dumitru Uzun (DUzun.Me)
  *   @license MIT
- *   @version 2.1.1
+ *   @version 2.2.0
  *   @repo    https://github.com/duzun/onemit
  */
 
@@ -46,6 +46,9 @@
  *      OnEmit.once(event, fn)
  *          Register a single-shot `event` handler `fn`,
  *          removed immediately after it is invoked the first time.
+ *
+ *      OnEmit.when(event): Promise
+ *          Similar to .once(event, fn), only returns a promise.
  *
  *      OnEmit.off(event, fn)
  *          * Pass `event` and `fn` to remove a listener.
@@ -169,13 +172,43 @@ _extend(OnEmit.prototype, {
      * @param  (Function) fn
      * @return (OnEmit)
      */
-    once(event, fn) {
+    once(event, fn, _never) {
         function _fn() {
+            delete _fn.never;
             this.off(event, _fn);
             fn.apply(this, arguments);
         }
         _fn.fn = fn;
+        if(_never) _fn.never = _never;
         return this.on(event, _fn);
+    },
+
+    /**
+     * Wait for `event` with a Promise.
+     *
+     * @param  (String)   event
+     * @return (Promise)
+     */
+    when(event, timeout) {
+        const self = this;
+        const Promise = OnEmit.Promise || _Promise;
+        return new Promise((resolve, reject) => {
+            const on = (event, ...args) => {
+                event.args = args;
+                resolve(event);
+                reject = undefined;
+            };
+
+            self.once(event, on, reject);
+
+            if(timeout = +timeout) getTimeoutFn(timeout)(() => {
+                if(!reject) return;
+                let error = new Error(`OnEmit.when(${event}) timeout after ${timeout}`);
+                error.type = 'timeout';
+                reject(error);
+                self.off(event, on);
+            }, timeout);
+        });
     },
 
     /**
@@ -200,7 +233,13 @@ _extend(OnEmit.prototype, {
 
         // remove all handlers
         if (0 == arguments.length) {
-            if ( _callbacks ) this._callbacks = {};
+            if ( _callbacks ) {
+                for(event in _callbacks) if(hop.call(_callbacks, event)) {
+                    this.off(event);
+                }
+                this._callbacks = {};
+            }
+
             return this;
         }
 
@@ -208,20 +247,39 @@ _extend(OnEmit.prototype, {
         const _list = _callbacks[event];
         if (!_list) return this;
 
+        const neverList = [];
+
         // remove all handlers
         if (1 == arguments.length) {
             delete _callbacks[event];
-            return this;
-        }
-
-        // remove specific handler
-        let _cb;
-        for (var i = _list.length; i--;) {
-            _cb = _list[i];
-            if ( _cb === fn || _cb.fn === fn ) {
-                splice.call(_list, i, 1);
+            for (let i = _list.length; i--;) if(_list[i]) {
+                let { never } = _list[i];
+                if(never) neverList.push(never);
             }
         }
+        else {
+            // remove specific handler
+            for (let i = _list.length; i--;) {
+                let _cb = _list[i];
+                if ( _cb === fn || _cb.fn === fn ) {
+                    let { never } = _cb;
+                    if(never) neverList.push(never);
+                    splice.call(_list, i, 1);
+                }
+            }
+        }
+
+        const neverListLength = neverList.length;
+        if(neverListLength) {
+            const timeoutFn = getTimeoutFn();
+            timeoutFn(() => {
+                for (let i = 0; i < neverListLength; ++i) {
+                    const never = neverList[i];
+                    if(never) never.call(this, event);
+                }
+            });
+        }
+
         return this;
     },
 
@@ -269,7 +327,9 @@ _extend(OnEmit.prototype, {
 
         args[0] = _event;
         for ( let i = 0, len = _all.length; i < len; ++i ) {
-            let r = _all[i].apply(_self, args);
+            let _fn = _all[i];
+            delete _fn.never;
+            let r = _fn.apply(_self, args);
             if ( r !== undefined ) {
                 _ret.push(r);
             }
@@ -279,7 +339,7 @@ _extend(OnEmit.prototype, {
     },
 
     /**
-     * Emit `event` with the given args after `delay` milluseconds.
+     * Emit `event` with the given args after `delay` milliseconds.
      *
      * @param  (Number) delay - milliseconds after which to call listeners
      * @param  (String) event name
@@ -333,7 +393,9 @@ _extend(OnEmit.prototype, {
             i = 0;
         }
         for ( ; i < len; ++i ) {
-            _ret[i] = PromiseTimeout.call(_self, _all[i], args, delay);
+            let _fn = _all[i];
+            delete _fn.never;
+            _ret[i] = PromiseTimeout.call(_self, _fn, args, delay);
         }
         return Promise.all(_ret).then((result) => {
             _event.result = result;
@@ -389,7 +451,9 @@ _extend(OnEmit.prototype, {
 
         args[0] = _event;
         for ( let i = 0; i < len; ++i ) {
-            _ret[i] = PromiseTimeout.call(_self, _all[i], args);
+            let _fn = _all[i];
+            delete _fn.never;
+            _ret[i] = PromiseTimeout.call(_self, _fn, args);
         }
         return Promise.all(_ret)
         .then((result) => {

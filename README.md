@@ -107,6 +107,20 @@ emitter.once(event, fn);
 ```
 
 
+#### Wait for `event` with a Promise.
+```js
+emitter.when(event).then((event => {
+    let { args } = event;
+    // ...
+}));
+
+// reject after 10 seconds
+emitter.when(event, 10e3).catch((error) => {
+    console.log(error.type, error.message);
+});
+```
+
+
 ### Remove `event` listener(s)
 ```js
 emitter.off(event, fn);
