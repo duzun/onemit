@@ -2,7 +2,7 @@
 
 Event emitter that returns the event on emit [ .on() / .emit() / .emitAsync().then() ]
 
-[![Build Status](https://travis-ci.org/duzun/onemit.svg?branch=master)](https://travis-ci.org/duzun/onemit)
+[![Build Status](https://travis-ci.com/duzun/onemit.svg?branch=master)](https://travis-ci.com/duzun/onemit)
 [![Dependencies](https://david-dm.org/duzun/onemit.svg)](https://david-dm.org/duzun/onemit#info=dependencies&view=table)
 [![devDependencies](https://david-dm.org/duzun/onemit/dev-status.svg)](https://david-dm.org/duzun/onemit#info=devDependencies&view=table)
 
